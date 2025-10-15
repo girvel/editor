@@ -1,6 +1,6 @@
-#include <stdio.h>
+#include "nob.h"
 
 int main() {
-    printf("Hello, world!\n");
+    nob_log(NOB_INFO, "Editor started");
     return 0;
 }
