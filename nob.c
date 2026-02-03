@@ -34,18 +34,28 @@ int main(int argc, char **argv) {
 
 // needs manual deallocation
 char *src_to_obj(const char *path) {
-    Nob_String_Builder _builder = {0};
-    _builder.count = 0;
+    Nob_String_Builder sb = {0};
+    sb.count = 0;
 
-    nob_sb_append_cstr(&_builder, BUILD_FOLDER);
-    nob_sb_append_cstr(&_builder, path);
+    nob_sb_append_cstr(&sb, BUILD_FOLDER);
+    nob_sb_append_cstr(&sb, path);
 
-    assert(_builder.items[_builder.count - 2] == '.');
-    assert(_builder.items[_builder.count - 1] == 'c');
-    _builder.items[_builder.count - 1] = 'o';
+    Nob_String_View sv = {
+      .count = sb.count,
+      .data  = sb.items,
+    };
 
-    nob_sb_append_null(&_builder);
-    return _builder.items;
+    if (nob_sv_end_with(sv, ".cpp")) {
+        sb.count -= 4;
+    } else if (nob_sv_end_with(sv, ".c")) {
+        sb.count -= 2;
+    } else {
+        nob_log(NOB_ERROR, "Unknown file extension of %s", path);
+    }
+    nob_sb_append_cstr(&sb, ".o");
+
+    nob_sb_append_null(&sb);
+    return sb.items;
 }
 
 bool compile(Nob_Cmd *cmd, const char *source_file, char **outfile) {
@@ -74,6 +84,8 @@ bool compile_all(Nob_Cmd *cmd, Nob_File_Paths *outfiles) {
     nob_cc_inputs(cmd, "nob.h");
     nob_cc_output(cmd, BUILD_FOLDER"nob.o");
     nob_da_append(outfiles, BUILD_FOLDER"nob.o");
+
+    nob_da_append(outfiles, "cimgui/cimgui.so");
 
     ok &= nob_cmd_run(cmd);
 
